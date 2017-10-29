@@ -1,0 +1,30 @@
+{
+  "name": "70",
+  "version": "0.1.0",
+  "description": "Your next web service powered only by 70 lines of goodness.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quart-search/70.git"
+  },
+  "keywords": [
+    "web",
+    "server",
+    "json",
+    "async",
+    "await",
+    "server",
+    "http",
+    "http/2",
+    "70"
+  ],
+  "author": "Quart Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/quart-search/70/issues"
+  },
+  "homepage": "https://github.com/quart-search/70#readme"
+}
