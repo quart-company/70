@@ -1,6 +1,8 @@
-# 70
+<img src="./Logo.png" width="140">
+------
 Your next web service powered only by 70 lines of goodness.
 ------
+70 serves web services and APIs, 70 has no dependencies, 70 has the essentials and all in 70 lines.
 
 ## Getting Started
 Install from npm:
