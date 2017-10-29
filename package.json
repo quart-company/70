@@ -27,7 +27,8 @@
     "url": "https://github.com/quart-search/70/issues"
   },
   "homepage": "https://github.com/quart-search/70#readme",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "create-cert": "^1.0.6"
   }
 }
