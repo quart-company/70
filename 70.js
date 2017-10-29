@@ -1,7 +1,7 @@
 const { parse } = require('url');
 const { HTTP2_HEADER_METHOD, HTTP2_HEADER_PATH, HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE } = require('http2').constants;
 
-const respond = (stream, headers, statusCode) =>
+const respond = (stream, headers, statusCode = 200) =>
   (typeof stream.respond === 'function')
     ? stream.respond(Object.assign({ [HTTP2_HEADER_STATUS]: statusCode }, headers))
     : stream.writeHead(statusCode, headers);
