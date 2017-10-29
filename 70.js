@@ -1,30 +1,28 @@
-const MATCH_ALL = Symbol('match_all');
+const { parse } = require('url');
+const { HTTP2_HEADER_METHOD, HTTP2_HEADER_PATH, HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE } = require('http2').constants;
 
-const respond = (stream, value, statusCode) => {
-  const end = (_headers, chunk) => {
-    // Assign statusCode
-    if (statusCode) stream.statusCode = statusCode;
-    // Merge headers
-    const headers = Object.assign(_headers, (value.length)?{ 'Content-Length': value.length }:{});
-    for (const key in headers) {
-      if (!stream.getHeader(key)) stream.setHeader(key, headers[key]);
-    }
+const respond = (stream, headers, statusCode) =>
+  (typeof stream.respond === 'function')
+    ? stream.respond(Object.assign({ [HTTP2_HEADER_STATUS]: statusCode }, headers))
+    : stream.writeHead(statusCode, headers);
 
+const finish = (stream, value, statusCode) => {
+  const end = (headers, chunk) => {
+    if (stream.headersSent) return stream.end(chunk);
+    if (value.length) headers['Content-Length'] = value.length;
+
+    respond(stream, headers, statusCode);
     stream.end(chunk);
   };
   // Check and create response type
   if (!value) return;
-  else if (typeof value === 'string') {
-    // Plain Text response
-    end({ 'Content-Type': 'text/plain' }, value);
-  } else if (typeof value === 'object' && !(value instanceof Error)) {
-    // Non-Error Object as response
+  if (typeof value === 'object' && !(value instanceof Error)) {
     end({ 'Content-Type': 'application/json' }, JSON.stringify(value));
   } else if (value instanceof Error) {
-    respond(stream, { error: value.message }, value.code);
+    // Recurse for Object type finish
+    finish(stream, { error: value.message }, value.code);
   } else {
-    // Bad return value
-    end({ 'Content-Type': 'text/plain' }, "Internal Server Error", 500);
+    end({ 'Content-Type': 'text/plain' }, value);
   }
 };
 
@@ -35,36 +33,38 @@ const getBody = async ({ stream }, body = '') => new Promise((resolve, reject) =
 });
 
 module.exports = {
+  MATCH_ALL: Symbol('match_all'),
   handle: ({ routes, maxRouteRecursions, onError }) => {
-    const routeMap = (routes instanceof Map)?routes:new Map(Object.entries(routes));
+    const routeMap = (routes instanceof Map) ? routes : new Map(Object.entries(routes));
 
     const findRoute = (url, i) => {
       // Limit max recursions
       if (i > (maxRouteRecursions || 50)) return;
-      if (url === "") return routeMap.get(MATCH_ALL);
+      if (url === "") return routeMap.get(this.MATCH_ALL);
       // Support keys without / at the beginning
-      if ((url[0] === '/') && routeMap.has(url.substring(1))) return routeMap.get(url.substring(1)); 
+      if ((url[0] === '/') && routeMap.has(url.substring(1))) return routeMap.get(url.substring(1));
       // Find URL or recurse
-      return (routeMap.has(url))?routeMap.get(url):findRoute(url.substring(0, url.lastIndexOf('/')), i++);
+      return (routeMap.has(url)) ? routeMap.get(url) : findRoute(url.substring(0, url.lastIndexOf('/')), i++);
     };
-  
+
     return async (stream, res) => {
-      const route = findRoute(stream.url, 0, maxRouteRecursions);
-      if (!route) return respond(res || stream, "Not Found", 404);
-  
-      const { method, url, headers, query } = stream;
-      const { setHeader, removeHeader, getHeader } = res || stream;
-      const context = { method, url, headers, query, setHeader, removeHeader, getHeader, stream };
-  
+      const headers = stream.headers || res;
+      const response = (typeof stream.respond === 'function') ? stream : res;
+      const { pathname, path, query } = parse(stream.url || headers[HTTP2_HEADER_PATH], true);
+      const method = stream.method || headers[HTTP2_HEADER_METHOD];
+      const route = findRoute(pathname, 0, maxRouteRecursions);
+      if (!route) return finish(response, "Not Found", 404);
+
+      const context = { method, url: path, query, headers, respond: (...args) => respond(stream, ...args), stream, response };
+
       try {
-        respond(res || stream, await route(context));
+        finish(response, await route(context));
       } catch (error) {
         if (typeof onError === 'function') onError(error);
-        respond(res || stream, "Internal Server Error", 500);
+        finish(response, "Internal Server Error", 500);
       }
     }
   },
   text: async (context) => getBody(context),
-  json: async (context) => JSON.parse(await getBody(context)),
-  MATCH_ALL
+  json: async (context) => JSON.parse(await getBody(context))
 }; // 70

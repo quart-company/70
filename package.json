@@ -26,5 +26,8 @@
   "bugs": {
     "url": "https://github.com/quart-search/70/issues"
   },
-  "homepage": "https://github.com/quart-search/70#readme"
+  "homepage": "https://github.com/quart-search/70#readme",
+  "dependencies": {
+    "create-cert": "^1.0.6"
+  }
 }
