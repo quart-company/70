@@ -19,7 +19,6 @@ const finish = (stream, value, statusCode) => {
   if (typeof value === 'object' && !(value instanceof Error)) {
     end({ 'Content-Type': 'application/json' }, JSON.stringify(value));
   } else if (value instanceof Error) {
-    // Recurse for Object type finish
     finish(stream, { error: value.message }, value.code);
   } else {
     end({ 'Content-Type': 'text/plain' }, value);
@@ -34,6 +33,7 @@ const getBody = async ({ stream }, body = '') => new Promise((resolve, reject) =
 
 module.exports = {
   MATCH_ALL: Symbol('match_all'),
+  method: (m, handle) => (ctx) => (ctx.method === m.toUpperCase())?handle(ctx):finish(ctx.response, "Not Found", 404),
   handle: ({ routes, maxRouteRecursions, onError }) => {
     const routeMap = (routes instanceof Map) ? routes : new Map(Object.entries(routes));
 
