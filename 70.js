@@ -33,7 +33,7 @@ const getBody = async ({ stream }, body = '') => new Promise((resolve, reject) =
 
 module.exports = {
   MATCH_ALL: Symbol('match_all'),
-  method: (m, handle) => (ctx) => (ctx.method === m.toUpperCase())?handle(ctx):finish(ctx.response, "Not Found", 404),
+  method: (m, handle) => (ctx) => (((Array.isArray(m))?m:[m]).indexOf(ctx.method) >= 0)?handle(ctx):finish(ctx.response, "Not Found", 404),
   handle: ({ routes, maxRouteRecursions, onError }) => {
     const routeMap = (routes instanceof Map) ? routes : new Map(Object.entries(routes));
 
