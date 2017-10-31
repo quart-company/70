@@ -55,7 +55,7 @@ module.exports = {
       const route = findRoute(pathname, 0, maxRouteRecursions);
       if (!route) return finish(response, "Not Found", 404);
 
-      const context = { method, url: path, query, headers, respond: (...args) => respond(stream, ...args), stream, response };
+      const context = { method, url: path, query, headers, respond: (...args) => respond(response, ...args), stream, response };
 
       try {
         finish(response, await route(context));
